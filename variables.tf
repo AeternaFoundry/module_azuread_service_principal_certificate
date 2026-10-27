@@ -11,6 +11,10 @@ Optional:
     - key_id
     - start_date
     - type
+    - timeouts (block):
+        - create (optional)
+        - delete (optional)
+        - read (optional)
 EOT
 
   type = map(object({
@@ -22,7 +26,20 @@ EOT
     key_id               = optional(string)
     start_date           = optional(string)
     type                 = optional(string)
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+      read   = optional(string)
+    }))
   }))
+  validation {
+    condition = alltrue([
+      for k, v in var.service_principal_certificates : (
+        can(regex("^(/[^/]+/[^/]+)+$", v.service_principal_id))
+      )
+    ])
+    error_message = "must be a valid Azure resource ID"
+  }
   validation {
     condition = alltrue([
       for k, v in var.service_principal_certificates : (
@@ -37,7 +54,7 @@ EOT
         v.encoding == null || (contains(["base64", "hex", "pem"], v.encoding))
       )
     ])
-    error_message = "must be one of: base64, hex, pem"
+    error_message = "must be one of: \"base64\", \"hex\", \"pem\""
   }
   validation {
     condition = alltrue([
@@ -47,6 +64,6 @@ EOT
     ])
     error_message = "must not be empty"
   }
-  # Note: 5 additional provider-side validators are enforced at apply time but not mirrored as validation{} blocks here (bespoke or non-mechanically-translatable).
+  # Note: 3 additional provider-side validators are enforced at apply time but not mirrored as validation{} blocks here (bespoke or non-mechanically-translatable).
 }
 
